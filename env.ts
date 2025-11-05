@@ -42,7 +42,7 @@ try {
       console.log(`${path}: ${err.message}`)
     })
 
-    process.exit(1)
+    process.exit(1) //This is how you kill your server
   }
 
   throw e
