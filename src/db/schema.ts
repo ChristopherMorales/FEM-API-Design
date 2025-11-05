@@ -1,0 +1,121 @@
+import {
+  pgTable,
+  uuid,
+  varchar,
+  text,
+  timestamp,
+  boolean,
+  integer,
+} from 'drizzle-orm/pg-core'
+
+import { relations } from 'drizzle-orm'
+import { email } from 'zod'
+import { create } from 'domain'
+import { createInsertSchema } from 'drizzle-zod'
+
+export const users = pgTable('users', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  email: varchar('email', { length: 255 }).notNull().unique(),
+  username: varchar('username', { length: 50 }).notNull().unique(),
+  password: varchar('password', { length: 255 }).notNull(),
+  firstName: varchar('first_name', { length: 50 }).notNull(),
+  lastName: varchar('last_name', { length: 50 }).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at').default(null),
+})
+
+export const habits = pgTable('habits', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id')
+    .references(() => users.id, { onDelete: 'cascade' })
+    .notNull(),
+  name: varchar('name', { length: 100 }).notNull(),
+  description: text('description'),
+  frequency: varchar('frequency', { length: 50 }).notNull(),
+  targetCount: integer('target_count').default(1),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at').default(null),
+})
+
+export const entries = pgTable('entries', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  habitId: uuid('habit_id')
+    .references(() => habits.id, { onDelete: 'cascade' })
+    .notNull(),
+  completionDate: timestamp('completion_date').defaultNow().notNull(),
+  note: text('note'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+export const tags = pgTable('tags', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  name: varchar('name', { length: 50 }).notNull().unique(),
+  color: varchar('color', { length: 10 }).default('#6b7280').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at').default(null),
+})
+
+export const habitTags = pgTable('habitTags', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  habitId: uuid('habit_id')
+    .references(() => habits.id, { onDelete: 'cascade' })
+    .notNull(),
+  tagId: uuid('tag_id')
+    .references(() => tags.id, { onDelete: 'cascade' })
+    .notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at').default(null),
+})
+
+// Users can have many habits
+export const usersRelations = relations(users, ({ many }) => ({
+  habits: many(habits),
+}))
+
+// Habits belong to one user, have many entries and tags
+export const habitsRelations = relations(habits, ({ one, many }) => ({
+  user: one(users, {
+    fields: [habits.userId],
+    references: [users.id],
+  }),
+  entries: many(entries),
+  habitTags: many(habitTags),
+}))
+
+// Entries belong to one habit
+export const entriesRelations = relations(entries, ({ one }) => ({
+  habit: one(habits, {
+    fields: [entries.habitId],
+    references: [habits.id],
+  }),
+}))
+
+// Tags can be on many habits
+export const tagsRelations = relations(tags, ({ many }) => ({
+  habitTags: many(habitTags),
+}))
+
+// Junction table relations
+export const habitTagsRelations = relations(habitTags, ({ one }) => ({
+  habit: one(habits, {
+    fields: [habitTags.habitId],
+    references: [habits.id],
+  }),
+  tag: one(tags, {
+    fields: [habitTags.tagId],
+    references: [tags.id],
+  }),
+}))
+
+export type User = typeof users.$inferSelect
+export type Habit = typeof habits.$inferSelect
+export type Entry = typeof entries.$inferSelect
+export type Tag = typeof tags.$inferSelect
+export type HabitTag = typeof habitTags.$inferSelect
+
+export const insertUserSchema = createInsertSchema(users)
