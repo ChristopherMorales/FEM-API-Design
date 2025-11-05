@@ -11,7 +11,7 @@ import {
 import { relations } from 'drizzle-orm'
 import { email } from 'zod'
 import { create } from 'domain'
-import { createInsertSchema } from 'drizzle-zod'
+import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 
 export const users = pgTable('users', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -119,3 +119,4 @@ export type Tag = typeof tags.$inferSelect
 export type HabitTag = typeof habitTags.$inferSelect
 
 export const insertUserSchema = createInsertSchema(users)
+export const selectUserSchema = createSelectSchema(users)
