@@ -1,6 +1,10 @@
 import { Router } from 'express'
+import { authenticateToken } from '../middleware/auth.ts'
 
 const router = Router()
+
+// Apply authentication to ALL routes in this router
+router.use(authenticateToken)
 
 router.get('/', (req, res) => {
   res.json({ message: 'users' })
