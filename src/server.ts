@@ -6,6 +6,7 @@ import cors from 'cors'
 import morgan from 'morgan'
 import helmet from 'helmet'
 import { isTest } from '../env.ts'
+import { errorHandler } from './middleware/errorHandler.ts'
 
 // Create Express application
 const app = express()
@@ -33,6 +34,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api/users', userRoutes)
 app.use('/api/habits', habitRoutes)
 
+app.use(errorHandler)
 // Export the app for use in other modules (like tests)
 export { app }
 
